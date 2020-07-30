@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 # encoding=utf-8
-
 import os
 import subprocess
 import posixpath
@@ -60,17 +59,20 @@ class Encoding:
         return None, bs
 
 
-C_SOURCE_EXTENSIONS = [
+SUPPORTED_EXTENSIONS = [
     '.h',
     '.c',
     '.cc',
+    '.cpp',
+    '.c++',
+    '.java',
 ]
 
 
-def is_c_source_file(path: str):
+def is_supported_file(path: str):
     _, ext = posixpath.splitext(path)
     ext = ext.lower()
-    if ext in C_SOURCE_EXTENSIONS:
+    if ext in SUPPORTED_EXTENSIONS:
         return True
     else:
         return False
@@ -144,7 +146,7 @@ if __name__ == '__main__':
     lines = completed_process.stdout.decode('utf-8').split('\n')
 
     filepaths = filter(lambda x: len(x) > 0, lines)
-    filepaths = filter(is_c_source_file, filepaths)
+    filepaths = filter(is_supported_file, filepaths)
     filepaths = list(filepaths)
 
     print(filepaths)

@@ -6,8 +6,6 @@ import traceback
 import subprocess
 from subprocess import PIPE
 
-from tqdm import tqdm
-
 
 class Encoding:
     UTF8 = 'utf-8'
@@ -109,10 +107,6 @@ def find_all_files(infile):
     return retval
 
 
-def check_clang_format():
-    pass
-
-
 if __name__ == '__main__':
     # all files
     # file_list = find_all_files('.')
@@ -128,9 +122,8 @@ if __name__ == '__main__':
 
     file_list = list(filter(lambda x: len(x) > 0, lines))
 
-    pbar = tqdm(file_list)
-    for fpath in pbar:
-        pbar.set_description(fpath)
+    for fpath in file_list:
+        print('>', fpath)
         # mime = mimetypes.guess_type(fpath)
         # print(mime, fpath)
 
