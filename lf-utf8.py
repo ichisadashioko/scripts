@@ -109,7 +109,7 @@ def find_all_files(infile):
 
 if __name__ == '__main__':
     # all files
-    # file_list = find_all_files('.')
+    # filepaths = find_all_files('.')
 
     # tracked files only
     completed_process = subprocess.run(
@@ -120,15 +120,17 @@ if __name__ == '__main__':
 
     lines = completed_process.stdout.decode('utf-8').split('\n')
 
-    file_list = list(filter(lambda x: len(x) > 0, lines))
+    filepaths = filter(lambda x: len(x) > 0, lines)
+    filepaths = filter(lambda x: os.path.exists(x))
+    # probably a git submodule
+    # TODO modules which are not initialized may appear as files
+    filepaths = filter(lambda x: os.path.isfile(x))
+    filepaths = list(filepaths)
 
-    for fpath in file_list:
+    for fpath in filepaths:
         print('>', fpath)
         # mime = mimetypes.guess_type(fpath)
         # print(mime, fpath)
-
-        if not os.path.exists(fpath):
-            continue
 
         basename = os.path.basename(fpath)
         ext = os.path.splitext(basename)[1].lower()

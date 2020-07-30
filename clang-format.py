@@ -146,6 +146,8 @@ if __name__ == '__main__':
     lines = completed_process.stdout.decode('utf-8').split('\n')
 
     filepaths = filter(lambda x: len(x) > 0, lines)
+    filepaths = filter(lambda x: os.path.exists(x))
+    filepaths = filter(lambda x: os.path.isfile(x))
     filepaths = filter(is_supported_file, filepaths)
     filepaths = list(filepaths)
 
@@ -153,6 +155,7 @@ if __name__ == '__main__':
     for filepath in filepaths:
         file_content = Encoding.decode(open(filepath, mode='rb').read())
 
+        # TODO check for .clang-format file existence
         cmd = ['clang-format', '-style=file', filepath]
         sp = Command(cmd)
         sp.run()
