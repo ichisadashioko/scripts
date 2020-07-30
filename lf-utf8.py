@@ -121,10 +121,10 @@ if __name__ == '__main__':
     lines = completed_process.stdout.decode('utf-8').split('\n')
 
     filepaths = filter(lambda x: len(x) > 0, lines)
-    filepaths = filter(lambda x: os.path.exists(x))
+    filepaths = filter(lambda x: os.path.exists(x), filepaths)
     # probably a git submodule
     # TODO modules which are not initialized may appear as files
-    filepaths = filter(lambda x: os.path.isfile(x))
+    filepaths = filter(lambda x: os.path.isfile(x), filepaths)
     filepaths = list(filepaths)
 
     for fpath in filepaths:

@@ -146,8 +146,8 @@ if __name__ == '__main__':
     lines = completed_process.stdout.decode('utf-8').split('\n')
 
     filepaths = filter(lambda x: len(x) > 0, lines)
-    filepaths = filter(lambda x: os.path.exists(x))
-    filepaths = filter(lambda x: os.path.isfile(x))
+    filepaths = filter(lambda x: os.path.exists(x), filepaths)
+    filepaths = filter(lambda x: os.path.isfile(x), filepaths)
     filepaths = filter(is_supported_file, filepaths)
     filepaths = list(filepaths)
 
