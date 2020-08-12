@@ -134,6 +134,23 @@ def list_git_files(indir: str):
 
         raise Exception(error_msg)
 
+    encoding, decoded_output = Encoding.decode(git_process.stdout)
+    if (encoding is None) or (type(decoded_output) is bytes):
+        print(git_process.stdout)
+        raise Exception('Failed to decode the git output!')
+
+    output_lines = decoded_output.split('\n')
+    rel_filepaths = filter(lambda x: len(x) > 0, output_lines)
+    filepaths = map(lambda x: os.path.join(indir, x), rel_filepaths)
+    filepaths = filter(lambda x: os.path.exists(x), filepaths)
+
+    # If the file appears in git but it is a directory then it is probably a git submodule
+    # TODO modules which are not initialized may appear as files
+    filepaths = filter(lambda x: os.path.isfile(x), filepaths)
+
+    filepaths = list(filepaths)
+
+    return filepaths
 
 def main():
     parser = argparse.ArgumentParser()
@@ -146,11 +163,12 @@ def main():
     print(args)
 
     if args.git:
-        list_git_files(args.infile)
+        filepaths = list_git_files(args.infile)
     else:
         filepaths = find_all_files(args.infile)
-        for filepath in filepaths:
-            print(filepath)
+
+    for filepath in filepaths:
+        print('>', filepath)
 
     return
     # all files
