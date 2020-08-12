@@ -1,10 +1,23 @@
 #!/usr/bin/env python3
 # encoding=utf-8
 import os
-import mimetypes
-import traceback
+import sys
 import subprocess
-from subprocess import PIPE
+import argparse
+from typing import List
+
+
+class TermColor:
+    RESET_COLOR = '\033[0m'
+    FG_RED = '\033[31m'
+    FG_GREEN = '\033[32m'
+    FG_YELLOW = '\033[33m'
+    FG_BLUE = '\033[34m'
+    FG_BRIGHT_RED = '\033[91m'
+    FG_BRIGHT_GREEN = '\033[92m'
+    FG_BRIGHT_YELLOW = '\033[93m'
+    FG_BRIGHT_BLUE = '\033[94m'
+    FG_BRIGHT_MAGENTA = '\033[95m'
 
 
 class Encoding:
@@ -62,11 +75,13 @@ class Encoding:
 skips = [
     '.git',  # git directory
     'logs',  # log directory
-    'Backup',  # Visual Studio project migration files
+    'backup',  # Visual Studio project migration files
     # known Visual Studio files
     'bin',
     'obj',
     '.vs',
+    'debug',
+    'release',
 ]
 
 skip_extensions = [
@@ -79,14 +94,20 @@ skip_extensions = [
     '.jpg',
     '.gif',
     '.png',
+    '.jpeg',
     # weird files from Visual Studio
     '.suo',
+    '.exe',
+    '.pdb',
+    '.ilk',
+    '.i64',
+    '.idb',
 ]
 
 
-def find_all_files(infile):
+def find_all_files(infile: str) -> List[str]:
     basename = os.path.basename(infile)
-    if basename in skips:
+    if basename.lower() in skips:
         return []
 
     retval = []
@@ -107,44 +128,70 @@ def find_all_files(infile):
     return retval
 
 
-if __name__ == '__main__':
-    # all files
-    # filepaths = find_all_files('.')
-
-    # tracked files only
-    completed_process = subprocess.run(
-        ['git', 'ls-files'],
-        stdout=PIPE,
-        stderr=PIPE,
+def list_git_files(indir: str):
+    git_process = subprocess.run(
+        args=['git', 'ls-files'],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        cwd=indir,
     )
 
-    lines = completed_process.stdout.decode('utf-8').split('\n')
+    if len(git_process.stderr) > 0:
+        _, error_msg = Encoding.decode(git_process.stderr)
 
-    filepaths = filter(lambda x: len(x) > 0, lines)
+        if type(error_msg) is bytes:
+            error_msg = str(error_msg)
+
+        raise Exception(error_msg)
+
+    encoding, decoded_output = Encoding.decode(git_process.stdout)
+    if (encoding is None) or (type(decoded_output) is bytes):
+        print(git_process.stdout)
+        raise Exception('Failed to decode the git output!')
+
+    output_lines = decoded_output.split('\n')
+    rel_filepaths = filter(lambda x: len(x) > 0, output_lines)
+    filepaths = map(lambda x: os.path.join(indir, x), rel_filepaths)
     filepaths = filter(lambda x: os.path.exists(x), filepaths)
-    # probably a git submodule
+
+    # If the file appears in git but it is a directory then it is probably a git submodule
     # TODO modules which are not initialized may appear as files
     filepaths = filter(lambda x: os.path.isfile(x), filepaths)
+
     filepaths = list(filepaths)
 
-    for fpath in filepaths:
-        print('>', fpath)
-        # mime = mimetypes.guess_type(fpath)
-        # print(mime, fpath)
+    return filepaths
 
-        basename = os.path.basename(fpath)
-        ext = os.path.splitext(basename)[1].lower()
-        if ext in skip_extensions:
+def main():
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('infile', default='.', action='store', nargs='?')
+    parser.add_argument('--git', help='use git to list file', action='store_true')
+    parser.add_argument('--run', action='store_true')
+
+    args = parser.parse_args()
+    print(args)
+
+    if args.git:
+        filepaths = list_git_files(args.infile)
+    else:
+        filepaths = find_all_files(args.infile)
+
+    for filepath in filepaths:
+        print('>', filepath)
+
+        basename = os.path.basename(filepath)
+        ext = os.path.splitext(basename)[1]
+
+        # git will not filter these extensions
+        if ext.lower() in skip_extensions:
             continue
 
-        bs = open(fpath, mode='rb').read()
+        bs = open(filepath, mode='rb').read()
         encoding, decoded_string = Encoding.decode(bs)
 
-        if encoding is None:
+        if (encoding is None) or (type(decoded_string) is bytes):
             continue
-
-        if not encoding == Encoding.UTF8:
-            open(fpath, mode='w', encoding=Encoding.UTF8).write(decoded_string)
 
         # enforce LF line ending
         content = decoded_string.replace('\r\n', '\n')
@@ -153,9 +200,16 @@ if __name__ == '__main__':
         # append empty line at the end
         # it's good practice for Git
         content = content + '\n'
+        encoded_content = content.encode(Encoding.UTF8)
 
-        os.remove(fpath)  # file will not be changed if we don't remove it
-        with open(fpath, mode='wb') as outfile:
-            encoded_content = content.encode(Encoding.UTF8)
-            outfile.write(encoded_content)
-        # print(encoding, fpath)
+        if encoded_content != bs:
+            print('>', f'{TermColor.FG_RED}{filepath}{TermColor.RESET_COLOR}', file=sys.stderr)
+
+        if args.run:
+            os.remove(filepath)  # file will not be changed if we don't remove it
+            with open(filepath, mode='wb') as outfile:
+                outfile.write(encoded_content)
+
+
+if __name__ == '__main__':
+    main()
