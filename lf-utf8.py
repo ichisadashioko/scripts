@@ -4,7 +4,8 @@ import os
 import mimetypes
 import traceback
 import subprocess
-from subprocess import PIPE
+import argparse
+from typing import List
 
 
 class Encoding:
@@ -62,11 +63,13 @@ class Encoding:
 skips = [
     '.git',  # git directory
     'logs',  # log directory
-    'Backup',  # Visual Studio project migration files
+    'backup',  # Visual Studio project migration files
     # known Visual Studio files
     'bin',
     'obj',
     '.vs',
+    'debug',
+    'release',
 ]
 
 skip_extensions = [
@@ -81,12 +84,17 @@ skip_extensions = [
     '.png',
     # weird files from Visual Studio
     '.suo',
+    '.exe',
+    '.pdb',
+    '.ilk',
+    '.i64',
+    '.idb',
 ]
 
 
-def find_all_files(infile):
+def find_all_files(infile: str) -> List[str]:
     basename = os.path.basename(infile)
-    if basename in skips:
+    if basename.lower() in skips:
         return []
 
     retval = []
@@ -107,7 +115,44 @@ def find_all_files(infile):
     return retval
 
 
-if __name__ == '__main__':
+def list_git_files(indir: str):
+    git_process = subprocess.run(
+        args=['git', 'ls-files'],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        cwd=indir,
+    )
+
+    print('stdout:', git_process.stdout)
+    print('stderr:', git_process.stderr)
+
+    if len(git_process.stderr) > 0:
+        _, error_msg = Encoding.decode(git_process.stderr)
+
+        if type(error_msg) is bytes:
+            error_msg = str(error_msg)
+
+        raise Exception(error_msg)
+
+
+def main():
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('infile', default='.', action='store', nargs='?')
+    parser.add_argument('--git', help='use git to list file', action='store_true')
+    parser.add_argument('--run', action='store_true')
+
+    args = parser.parse_args()
+    print(args)
+
+    if args.git:
+        list_git_files(args.infile)
+    else:
+        filepaths = find_all_files(args.infile)
+        for filepath in filepaths:
+            print(filepath)
+
+    return
     # all files
     # filepaths = find_all_files('.')
 
@@ -140,7 +185,7 @@ if __name__ == '__main__':
         bs = open(fpath, mode='rb').read()
         encoding, decoded_string = Encoding.decode(bs)
 
-        if encoding is None:
+        if (encoding is None) or (type(decoded_string) is bytes):
             continue
 
         if not encoding == Encoding.UTF8:
@@ -159,3 +204,6 @@ if __name__ == '__main__':
             encoded_content = content.encode(Encoding.UTF8)
             outfile.write(encoded_content)
         # print(encoding, fpath)
+
+if __name__ == '__main__':
+    main()
