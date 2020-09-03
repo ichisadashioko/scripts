@@ -205,10 +205,10 @@ def main():
         if encoded_content != bs:
             print('>', f'{TermColor.FG_RED}{filepath}{TermColor.RESET_COLOR}', file=sys.stderr)
 
-        if args.run:
-            os.remove(filepath)  # file will not be changed if we don't remove it
-            with open(filepath, mode='wb') as outfile:
-                outfile.write(encoded_content)
+            if args.run:
+                os.remove(filepath)  # file will not be changed if we don't remove it
+                with open(filepath, mode='wb') as outfile:
+                    outfile.write(encoded_content)
 
 
 if __name__ == '__main__':
