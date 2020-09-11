@@ -172,13 +172,20 @@ def main():
     args = parser.parse_args()
     print(args)
 
+    file_list = os.listdir(args.infile)
+
+    for file_name in file_list:
+        if file_name == '.git':
+            args.git = True
+            break
+
     if args.git:
         filepaths = list_git_files(args.infile)
     else:
         filepaths = find_all_files(args.infile)
 
     for filepath in filepaths:
-        print('>', filepath)
+        print('>', filepath, end=' ')
 
         basename = os.path.basename(filepath)
         ext = os.path.splitext(basename)[1]
@@ -202,11 +209,13 @@ def main():
         content = content + '\n'
         encoded_content = content.encode(Encoding.UTF8)
 
-        if encoded_content != bs:
-            print('>', f'{TermColor.FG_RED}{filepath}{TermColor.RESET_COLOR}', file=sys.stderr)
+        if encoded_content == bs:
+            print(f'{TermColor.FG_BRIGHT_GREEN}OK{TermColor.RESET_COLOR}')
+        else:
+            print(f'{TermColor.FG_RED}x{TermColor.RESET_COLOR}')
 
             if args.run:
-                os.remove(filepath)  # file will not be changed if we don't remove it
+                os.remove(filepath)  # file content may not be changed if we don't remove it
                 with open(filepath, mode='wb') as outfile:
                     outfile.write(encoded_content)
 
