@@ -158,6 +158,8 @@ def list_git_files(indir: str):
     # TODO modules which are not initialized may appear as files
     filepaths = filter(lambda x: os.path.isfile(x), filepaths)
 
+    filepaths = filter(lambda x: not os.path.splitext(x)[1].lower() in skip_extensions, filepaths)
+
     filepaths = list(filepaths)
 
     return filepaths
