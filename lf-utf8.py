@@ -168,12 +168,14 @@ def list_git_files(indir: str):
 
     return filepaths
 
+
 def main():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('infile', default='.', action='store', nargs='?')
     parser.add_argument('--git', help='use git to list file', action='store_true')
     parser.add_argument('--run', action='store_true')
+    parser.add_argument('--verbose', action='store_true')
 
     args = parser.parse_args()
     print(args)
@@ -218,7 +220,10 @@ def main():
         encoded_content = content.encode(Encoding.UTF8)
 
         if encoded_content == bs:
-            print(f'{TermColor.FG_BRIGHT_GREEN}OK{TermColor.RESET_COLOR}')
+            if args.verbose:
+                print(f'{TermColor.FG_BRIGHT_GREEN}OK{TermColor.RESET_COLOR}')
+            else:
+                print('\r', end='')
         else:
             if args.run:
                 os.remove(filepath)  # file content may not be changed if we don't remove it
