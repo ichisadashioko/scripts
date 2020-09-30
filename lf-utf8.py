@@ -220,12 +220,14 @@ def main():
         if encoded_content == bs:
             print(f'{TermColor.FG_BRIGHT_GREEN}OK{TermColor.RESET_COLOR}')
         else:
-            print(f'{TermColor.FG_RED}x{TermColor.RESET_COLOR}')
-
             if args.run:
                 os.remove(filepath)  # file content may not be changed if we don't remove it
                 with open(filepath, mode='wb') as outfile:
                     outfile.write(encoded_content)
+
+                print(f'{TermColor.FG_RED}x{TermColor.RESET_COLOR} -> {TermColor.FG_BRIGHT_GREEN}OK{TermColor.RESET_COLOR}')
+            else:
+                print(f'{TermColor.FG_RED}x{TermColor.RESET_COLOR}')
 
 
 if __name__ == '__main__':
