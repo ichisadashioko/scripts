@@ -198,12 +198,14 @@ def main():
 
         # git will not filter these extensions
         if ext.lower() in skip_extensions:
+            print('\r', end='')
             continue
 
         bs = open(filepath, mode='rb').read()
         encoding, decoded_string = Encoding.decode(bs)
 
         if (encoding is None) or (type(decoded_string) is bytes):
+            print('\r', end='')
             continue
 
         # enforce LF line ending
