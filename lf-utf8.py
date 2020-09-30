@@ -95,6 +95,8 @@ skip_extensions = [
     '.gif',
     '.png',
     '.jpeg',
+    '.jar',
+    '.jad',
     # weird files from Visual Studio
     '.suo',
     '.exe',
@@ -102,6 +104,8 @@ skip_extensions = [
     '.ilk',
     '.i64',
     '.idb',
+    # Microsoft Windows files
+    '.ini',
 ]
 
 
