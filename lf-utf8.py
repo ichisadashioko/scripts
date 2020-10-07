@@ -204,6 +204,13 @@ def main():
             continue
 
         bs = open(filepath, mode='rb').read()
+        if len(bs) == 0:
+            # empty file
+            if args.verbose:
+                print(f'{TermColor.FG_BRIGHT_GREEN}OK{TermColor.RESET_COLOR}')
+            else:
+                print('\r', end='')
+
         encoding, decoded_string = Encoding.decode(bs)
 
         if (encoding is None) or (type(decoded_string) is bytes):
