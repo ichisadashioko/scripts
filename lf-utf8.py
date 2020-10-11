@@ -192,6 +192,7 @@ def main():
     else:
         filepaths = find_all_files(args.infile)
 
+    MAX_FILESIZE = 1024 * 1024 * 10 # 10 MBs
     for filepath in filepaths:
         print('>', filepath, end=' ')
 
@@ -200,6 +201,11 @@ def main():
 
         # git will not filter these extensions
         if ext.lower() in skip_extensions:
+            print('\r', end='')
+            continue
+
+        filesize = os.path.getsize(filepath)
+        if filesize > MAX_FILESIZE:
             print('\r', end='')
             continue
 
