@@ -219,7 +219,20 @@ def main():
 
         # enforce LF line ending
         content = decoded_string.replace('\r\n', '\n')
+
+        # strip all leading and trailing new line characters
         content = content.strip('\n')
+
+        # remove trailing whitespace or tab characters
+        content_lines = content.split('\n')
+
+        formatted_lines = []
+        for line in content_lines:
+            line = line.rstrip()
+            line = line.rstrip('\t')
+            formatted_lines.append(line)
+
+        content = '\n'.join(formatted_lines)
 
         # append empty line at the end
         # it's good practice for Git
