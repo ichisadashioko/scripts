@@ -97,6 +97,9 @@ skip_extensions = [
     '.jpeg',
     '.jar',
     '.jad',
+    '.iso',
+    '.mds',
+    '.dat',
     # weird files from Visual Studio
     '.suo',
     '.exe',
