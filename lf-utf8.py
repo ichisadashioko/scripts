@@ -195,7 +195,7 @@ def main():
     else:
         filepaths = find_all_files(args.infile)
 
-    MAX_FILESIZE = 1024 * 1024 * 10 # 10 MBs
+    MAX_FILESIZE = 1024 * 1024 * 10  # 10 MBs
     for filepath in filepaths:
         print('>', filepath, end=' ')
 
@@ -208,17 +208,11 @@ def main():
             continue
 
         filesize = os.path.getsize(filepath)
-        if filesize > MAX_FILESIZE:
+        if (filesize == 0) or (filesize > MAX_FILESIZE):
             print('\r', end='')
             continue
 
         bs = open(filepath, mode='rb').read()
-        if len(bs) == 0:
-            # empty file
-            if args.verbose:
-                print(f'{TermColor.FG_BRIGHT_GREEN}OK{TermColor.RESET_COLOR}')
-            else:
-                print('\r', end='')
 
         encoding, decoded_string = Encoding.decode(bs)
 
