@@ -4,6 +4,7 @@ import os
 import sys
 import subprocess
 import argparse
+import json
 from typing import List
 
 
@@ -86,55 +87,24 @@ IGNORED_DIRS = [
     '__pycache__',
 ]
 
-IGNORED_EXTS = [
-    '.bomb',
-    '.map',
-    # Microsoft Excel files
-    '.xls',
-    # known binary extensions
-    '.dll',
-    '.jpg',
-    '.gif',
-    '.png',
-    '.jpeg',
-    '.jar',
-    '.jad',
-    '.iso',
-    '.mds',
-    '.dat',
-    # weird files from Visual Studio
-    '.suo',
-    '.exe',
-    '.pdb',
-    '.ilk',
-    '.i64',
-    '.idb',
-    # Microsoft Windows files
-    '.ini',
-]
 
-
-def find_all_files(infile: str) -> List[str]:
+def find_all_ipynb_files(infile: str, out_list: list):
     basename = os.path.basename(infile)
     if basename.lower() in IGNORED_DIRS:
         return []
 
     retval = []
 
-    if os.path.isfile(infile):
-        ext = os.path.splitext(infile)[1].lower()
-        if ext in IGNORED_EXTS:
-            return []
-        else:
-            return [infile]
-
-    elif os.path.isdir(infile):
+    if os.path.isdir(infile):
         flist = os.listdir(infile)
         for fname in flist:
             fpath = os.path.join(infile, fname)
-            retval.extend(find_all_files(fpath))
+            retval.extend(find_all_ipynb_files(infile=fpath))
 
-    return retval
+    elif os.path.isfile(infile):
+        ext = os.path.splitext(infile)[1].lower()
+        if ext == '.ipynb':
+            out_list.append(infile)
 
 
 def list_git_files(indir: str):
@@ -162,13 +132,7 @@ def list_git_files(indir: str):
     rel_filepaths = filter(lambda x: len(x) > 0, output_lines)
     filepaths = map(lambda x: os.path.join(indir, x), rel_filepaths)
     filepaths = filter(lambda x: os.path.exists(x), filepaths)
-
-    # If the file appears in git but it is a directory then it is probably a git submodule
-    # TODO modules which are not initialized may appear as files
     filepaths = filter(lambda x: os.path.isfile(x), filepaths)
-
-    filepaths = filter(lambda x: not os.path.splitext(x)[1].lower() in IGNORED_EXTS, filepaths)
-
     filepaths = list(filepaths)
 
     return filepaths
@@ -180,7 +144,7 @@ def main():
     parser.add_argument('infile', default='.', action='store', nargs='?')
     parser.add_argument('--git', help='use git to list file', action='store_true')
     parser.add_argument('--run', action='store_true')
-    parser.add_argument('--verbose', action='store_true')
+    parser.add_argument('-v', '--verbose', dest='verbose', action='store_true')
 
     args = parser.parse_args()
     print(args)
@@ -194,23 +158,16 @@ def main():
 
     if args.git:
         filepaths = list_git_files(args.infile)
+        filepaths = filter(lambda filepath: os.path.splitext(filepath)[1].lower() == '.ipynb', filepaths)
+        filepaths = list(filepaths)
     else:
-        filepaths = find_all_files(args.infile)
+        filepaths = find_all_ipynb_files(args.infile)
 
-    MAX_FILESIZE = 1024 * 1024 * 10  # 10 MBs
     for filepath in filepaths:
         print('>', filepath, end=' ')
 
-        basename = os.path.basename(filepath)
-        ext = os.path.splitext(basename)[1]
-
-        # git will not filter these extensions
-        if ext.lower() in IGNORED_EXTS:
-            print('\r', end='')
-            continue
-
         filesize = os.path.getsize(filepath)
-        if (filesize == 0) or (filesize > MAX_FILESIZE):
+        if filesize == 0:
             print('\r', end='')
             continue
 
@@ -222,27 +179,20 @@ def main():
             print('\r', end='')
             continue
 
-        # enforce LF line ending
-        content = decoded_string.replace('\r\n', '\n')
+        obj = json.loads(decoded_string)
+        if 'version' in obj['metadata']['language_info']:
+            del obj['metadata']['language_info']['version']
 
-        # strip all leading and trailing new line characters
-        content = content.strip('\n')
+        json_str = json.dumps(
+            obj=obj,
+            ensure_ascii=False,
+            indent='\t',
+        )
 
-        # remove trailing whitespace or tab characters
-        content_lines = content.split('\n')
+        if not json_str[-1] == '\n':
+            json_str += '\n'
 
-        formatted_lines = []
-        for line in content_lines:
-            line = line.rstrip()
-            line = line.rstrip('\t')
-            formatted_lines.append(line)
-
-        content = '\n'.join(formatted_lines)
-
-        # append empty line at the end
-        # it's good practice for Git
-        content = content + '\n'
-        encoded_content = content.encode(Encoding.UTF8)
+        encoded_content = json_str.encode(Encoding.UTF8)
 
         if encoded_content == bs:
             if args.verbose:
