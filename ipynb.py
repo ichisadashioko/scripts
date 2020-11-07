@@ -149,19 +149,26 @@ def main():
     args = parser.parse_args()
     print(args)
 
-    file_list = os.listdir(args.infile)
+    filepaths = []
 
-    for file_name in file_list:
-        if file_name == '.git':
-            args.git = True
-            break
+    if not os.path.exists(args.infile):
+        raise Exception(args.infile + ' does not exist!')
+    elif os.path.isfile(args.infile):
+        filepaths.append(args.infile)
+    elif os.path.isdir(args.infile):
+        file_list = os.listdir(args.infile)
 
-    if args.git:
-        filepaths = list_git_files(args.infile)
-        filepaths = filter(lambda filepath: os.path.splitext(filepath)[1].lower() == '.ipynb', filepaths)
-        filepaths = list(filepaths)
-    else:
-        filepaths = find_all_ipynb_files(args.infile)
+        for file_name in file_list:
+            if file_name == '.git':
+                args.git = True
+                break
+
+        if args.git:
+            filepaths = list_git_files(args.infile)
+            filepaths = filter(lambda filepath: os.path.splitext(filepath)[1].lower() == '.ipynb', filepaths)
+            filepaths = list(filepaths)
+        else:
+            find_all_ipynb_files(args.infile, out_list=filepaths)
 
     for filepath in filepaths:
         print('>', filepath, end=' ')
