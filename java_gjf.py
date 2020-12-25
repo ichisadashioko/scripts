@@ -256,7 +256,7 @@ if __name__ == '__main__':
 
     gjf_bin_filepath = os.path.join(tmp_dir_value, gjf_bin_filename)
 
-    # print('gjf_bin_filepath: ' + gjf_bin_filepath)
+    print('gjf_bin_filepath: ' + gjf_bin_filepath)
 
     if not os.path.exists(gjf_bin_filepath):
         print('Downloading google-java-format binary...')
@@ -291,6 +291,7 @@ if __name__ == '__main__':
                 '-jar',
                 gjf_bin_filepath,
                 '--aosp',
+                '--skip-reflowing-long-strings',
                 fpath,
             ],
             stdout=subprocess.PIPE,
