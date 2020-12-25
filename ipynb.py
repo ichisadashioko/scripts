@@ -93,13 +93,11 @@ def find_all_ipynb_files(infile: str, out_list: list):
     if basename.lower() in IGNORED_DIRS:
         return []
 
-    retval = []
-
     if os.path.isdir(infile):
         flist = os.listdir(infile)
         for fname in flist:
             fpath = os.path.join(infile, fname)
-            retval.extend(find_all_ipynb_files(infile=fpath))
+            find_all_ipynb_files(infile=fpath, out_list=out_list)
 
     elif os.path.isfile(infile):
         ext = os.path.splitext(infile)[1].lower()
