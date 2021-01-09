@@ -207,12 +207,16 @@ if __name__ == '__main__':
 
     fpath_list = []
 
+    gjf_process_cwd = ''
+
     if not os.path.exists(args.infile):
         print(args.infile + ' does not exist!', file=sys.stderr)
         sys.exit(-1)
     elif os.path.isfile(args.infile):
         fpath_list.append(args.infile)
+        gjf_process_cwd = os.getcwd()
     elif os.path.isdir(args.infile):
+        gjf_process_cwd = args.infile
         # list and append file to the pending list
         if args.nogit:
             find_all_java_files(infile=args.infile, out_list=fpath_list)
@@ -296,7 +300,7 @@ if __name__ == '__main__':
             ],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            cwd=os.path.abspath(args.infile),
+            cwd=os.path.abspath(gjf_process_cwd),
         )
 
         if (len(gjf_process.stderr) > 0) or (gjf_process.returncode != 0):
