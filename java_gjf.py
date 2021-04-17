@@ -7,6 +7,9 @@ import argparse
 import urllib.request
 import traceback
 
+
+GJF_BINARIES_ROOT_ENVIRONMENT_VARIABLE_NAME = 'GJF_BINARIES_ROOT'
+
 IGNORED_FILES = [
     '.git',  # git directory
     'logs',  # log directory
@@ -243,12 +246,11 @@ if __name__ == '__main__':
 
     # Download google-java-format binary
 
-    TMP_DIR_ENV_VAR_NAME = 'SHIOKO_JAVA_FORMMATTER_TMP_DIR'
-
-    if TMP_DIR_ENV_VAR_NAME in os.environ:
-        tmp_dir_value = os.environ[TMP_DIR_ENV_VAR_NAME]
+    if GJF_BINARIES_ROOT_ENVIRONMENT_VARIABLE_NAME in os.environ:
+        tmp_dir_value = os.environ[GJF_BINARIES_ROOT_ENVIRONMENT_VARIABLE_NAME]
     else:
         tmp_dir_value = os.path.dirname(os.path.abspath(__file__))
+        print(f'{GJF_BINARIES_ROOT_ENVIRONMENT_VARIABLE_NAME} is not set. Using {tmp_dir_value} to store the binary.')
 
     # print('tmp_dir_value: ' + tmp_dir_value)
 
