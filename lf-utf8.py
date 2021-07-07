@@ -111,6 +111,8 @@ IGNORED_EXTS = [
     '.idb',
     # Microsoft Windows files
     '.ini',
+    # opencore binaries
+    '.aml',
 ]
 
 
