@@ -113,6 +113,7 @@ IGNORED_EXTS = [
     '.ini',
     # opencore binaries
     '.aml',
+    '.bin',
 ]
 
 
