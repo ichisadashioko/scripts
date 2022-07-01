@@ -245,7 +245,7 @@ def format_text_file_content(content: str):
 
 
 def format_with_clang_format(inpath: str):
-    content_bs = Encoding.decode(open(inpath, mode='rb').read())
+    content_bs = open(inpath, mode='rb').read()
 
     # TODO check for .clang-format file in the same directory
     # TODO add 'check' or 'format' flags
