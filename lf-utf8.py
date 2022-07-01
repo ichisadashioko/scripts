@@ -182,30 +182,39 @@ def main():
 
     parser.add_argument('infile', default='.', action='store', nargs='?')
     parser.add_argument('--git', help='use git to list file', action='store_true')
+    parser.add_argument('--noautogit', action='store_true')
     parser.add_argument('--run', action='store_true')
     parser.add_argument('--verbose', action='store_true')
 
     args = parser.parse_args()
     print(args)
 
+    inpath = args.infile
+    use_git = args.git
+    no_auto_git = args.noautogit
+    is_run = args.run
+    verbose = args.verbose
+
     filepaths = []
 
-    if not os.path.exists(args.infile):
-        raise Exception(args.infile + ' does not exist!')
-    elif os.path.isfile(args.infile):
-        filepaths.append(args.infile)
-    elif os.path.isdir(args.infile):
-        file_list = os.listdir(args.infile)
+    if not os.path.exists(inpath):
+        raise Exception(inpath + ' does not exist!')
+    elif os.path.isfile(inpath):
+        filepaths.append(inpath)
+    elif os.path.isdir(inpath):
 
-        for file_name in file_list:
-            if file_name == '.git':
-                args.git = True
-                break
+        if not no_auto_git:
+            file_list = os.listdir(inpath)
 
-        if args.git:
-            filepaths = list_git_files(args.infile)
+            for file_name in file_list:
+                if file_name == '.git':
+                    use_git = True
+                    break
+
+        if use_git:
+            filepaths = list_git_files(inpath)
         else:
-            filepaths = find_all_files(args.infile)
+            filepaths = find_all_files(inpath)
 
     MAX_FILESIZE = 1024 * 1024 * 10  # 10 MBs
     for filepath in filepaths:
@@ -255,12 +264,12 @@ def main():
         encoded_content = content.encode(Encoding.UTF8)
 
         if encoded_content == bs:
-            if args.verbose:
+            if verbose:
                 print(f'{TermColor.FG_BRIGHT_GREEN}OK{TermColor.RESET_COLOR}')
             else:
                 print('\r', end='')
         else:
-            if args.run:
+            if is_run:
                 os.remove(filepath)  # file content may not be changed if we don't remove it
                 with open(filepath, mode='wb') as outfile:
                     outfile.write(encoded_content)
