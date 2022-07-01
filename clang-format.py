@@ -282,8 +282,8 @@ if __name__ == '__main__':
     parser.add_argument('infile', default='.', action='store', nargs='?')
     parser.add_argument('-git', '--git', help='use git to list file', action='store_true')
     parser.add_argument('-noautogit', '--noautogit', action='store_true')
-    parser.add_argument('-r', '--r', '-run', '--run', action='store_true')
-    parser.add_argument('-v', '--v', '-verbose', '--verbose', action='store_true')
+    parser.add_argument('-r', '--r', '-run', '--run', dest='run', action='store_true')
+    parser.add_argument('-v', '--v', '-verbose', '--verbose', dest='verbose', action='store_true')
 
     args = parser.parse_args()
     print(args)
