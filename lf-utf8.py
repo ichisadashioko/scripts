@@ -1,23 +1,17 @@
 #!/usr/bin/env python3
 # encoding=utf-8
 import os
-import sys
 import subprocess
 import argparse
-from typing import List
+import stat
+import typing
 
-
-class TermColor:
-    RESET_COLOR = '\033[0m'
-    FG_RED = '\033[31m'
-    FG_GREEN = '\033[32m'
-    FG_YELLOW = '\033[33m'
-    FG_BLUE = '\033[34m'
-    FG_BRIGHT_RED = '\033[91m'
-    FG_BRIGHT_GREEN = '\033[92m'
-    FG_BRIGHT_YELLOW = '\033[93m'
-    FG_BRIGHT_BLUE = '\033[94m'
-    FG_BRIGHT_MAGENTA = '\033[95m'
+RESET = '\033[0m'
+RED = '\033[91m'
+GREEN = '\033[92m'
+FG_BRIGHT_YELLOW = '\033[93m'
+FG_BRIGHT_BLUE = '\033[94m'
+FG_BRIGHT_MAGENTA = '\033[95m'
 
 
 class Encoding:
@@ -117,35 +111,34 @@ IGNORED_EXTS = [
 ]
 
 
-def find_all_files(infile: str) -> List[str]:
-    basename = os.path.basename(infile)
+def find_regular_files(inpath: str) -> typing.List[str]:
+    basename = os.path.basename(inpath)
     if basename.lower() in IGNORED_DIRS:
         return []
 
-    retval = []
+    regular_filepath_list = []
 
-    if os.path.isfile(infile):
-        ext = os.path.splitext(infile)[1].lower()
-        if ext in IGNORED_EXTS:
-            return []
-        else:
-            return [infile]
+    file_stat = os.stat(inpath)
 
-    elif os.path.isdir(infile):
-        flist = os.listdir(infile)
-        for fname in flist:
-            fpath = os.path.join(infile, fname)
-            retval.extend(find_all_files(fpath))
+    if stat.S_ISDIR(file_stat.st_mode):
+        child_filename_list = os.listdir(inpath)
+        for child_filename in child_filename_list:
+            child_filepath = os.path.join(inpath, child_filename)
+            regular_filepath_list.extend(find_regular_files(child_filepath))
+    elif stat.S_ISREG(file_stat.st_mode):
+        ext = os.path.splitext(inpath)[1].lower()
+        if ext not in IGNORED_EXTS:
+            regular_filepath_list.append(inpath)
 
-    return retval
+    return regular_filepath_list
 
 
-def list_git_files(indir: str):
+def find_regular_files_from_git(inpath: str):
     git_process = subprocess.run(
         args=['git', 'ls-files'],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
-        cwd=indir,
+        cwd=inpath,
     )
 
     if len(git_process.stderr) > 0:
@@ -162,29 +155,89 @@ def list_git_files(indir: str):
         raise Exception('Failed to decode the git output!')
 
     output_lines = decoded_output.split('\n')
-    rel_filepaths = filter(lambda x: len(x) > 0, output_lines)
-    filepaths = map(lambda x: os.path.join(indir, x), rel_filepaths)
-    filepaths = filter(lambda x: os.path.exists(x), filepaths)
 
-    # If the file appears in git but it is a directory then it is probably a git submodule
-    # TODO modules which are not initialized may appear as files
-    filepaths = filter(lambda x: os.path.isfile(x), filepaths)
+    filepath_list = []
 
-    filepaths = filter(lambda x: not os.path.splitext(x)[1].lower() in IGNORED_EXTS, filepaths)
+    for line in output_lines:
+        line = line.strip()
+        if len(line) == 0:
+            continue
 
-    filepaths = list(filepaths)
+        basename = os.path.basename(line)
+        if basename.lower() in IGNORED_DIRS:
+            continue
 
-    return filepaths
+        filepath = os.path.join(inpath, line)
+        if not os.path.exists(filepath):
+            continue
+
+        file_stat = os.stat(filepath)
+        # If the file appears in git but it is a directory then it is probably a git submodule
+        if stat.S_ISREG(file_stat.st_mode):
+            ext = os.path.splitext(filepath)[1].lower()
+            if ext not in IGNORED_EXTS:
+                filepath_list.append(filepath)
+
+    return filepath_list
+
+
+def format_text_file_content(content: str):
+    # enforce LF line ending
+    content = content.replace('\r', '')
+
+    # strip all leading and trailing new line characters
+    content = content.strip('\n')
+
+    # remove trailing whitespace or tab characters
+    content_lines = content.split('\n')
+
+    formatted_lines = []
+    for line in content_lines:
+        line = line.rstrip()
+        line = line.rstrip('\t')
+        formatted_lines.append(line)
+
+    content = '\n'.join(formatted_lines)
+
+    # append empty line at the end
+    # it's good practice for Git
+    content = content + '\n'
+
+    return content
+
+
+def format_text_file(inpath: str):
+    content_bs = open(inpath, mode='rb').read()
+
+    encoding, decoded_string = Encoding.decode(content_bs)
+
+    if (encoding is None) or (type(decoded_string) is bytes):
+        return {
+            'error': 'Failed to decode the file!',
+        }
+
+    content = format_text_file_content(decoded_string)
+    encoded_content = content.encode(Encoding.UTF8)
+
+    if content_bs == encoded_content:
+        return {
+            'diff': False,
+        }
+    else:
+        return {
+            'diff': True,
+            'content_bs': encoded_content,
+        }
 
 
 def main():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('infile', default='.', action='store', nargs='?')
-    parser.add_argument('--git', help='use git to list file', action='store_true')
-    parser.add_argument('--noautogit', action='store_true')
-    parser.add_argument('--run', action='store_true')
-    parser.add_argument('--verbose', action='store_true')
+    parser.add_argument('-git', '--git', help='use git to list file', action='store_true')
+    parser.add_argument('-noautogit', '--noautogit', action='store_true')
+    parser.add_argument('-r', '--r', '-run', '--run', action='store_true')
+    parser.add_argument('-v', '--v', '-verbose', '--verbose', action='store_true')
 
     args = parser.parse_args()
     print(args)
@@ -195,29 +248,24 @@ def main():
     is_run = args.run
     verbose = args.verbose
 
-    filepaths = []
+    filepath_list = []
 
     if not os.path.exists(inpath):
         raise Exception(inpath + ' does not exist!')
     elif os.path.isfile(inpath):
-        filepaths.append(inpath)
+        filepath_list.append(inpath)
     elif os.path.isdir(inpath):
-
         if not no_auto_git:
-            file_list = os.listdir(inpath)
-
-            for file_name in file_list:
-                if file_name == '.git':
-                    use_git = True
-                    break
+            child_filename_list = os.listdir(inpath)
+            use_git = ('.git' in child_filename_list)
 
         if use_git:
-            filepaths = list_git_files(inpath)
+            filepath_list = find_regular_files_from_git(inpath)
         else:
-            filepaths = find_all_files(inpath)
+            filepath_list = find_regular_files(inpath)
 
     MAX_FILESIZE = 1024 * 1024 * 10  # 10 MBs
-    for filepath in filepaths:
+    for filepath in filepath_list:
         print('>', filepath, end=' ')
 
         basename = os.path.basename(filepath)
@@ -230,53 +278,30 @@ def main():
 
         filesize = os.path.getsize(filepath)
         if (filesize == 0) or (filesize > MAX_FILESIZE):
-            print('\r', end='')
+            print(f'- {RED}file is too big ({filesize}){RESET}', flush=True)
             continue
 
-        bs = open(filepath, mode='rb').read()
+        format_result = format_text_file(filepath)
 
-        encoding, decoded_string = Encoding.decode(bs)
-
-        if (encoding is None) or (type(decoded_string) is bytes):
-            print('\r', end='')
+        if 'error' in format_result:
+            print(f'- {RED}error{RESET}', flush=True)
             continue
 
-        # enforce LF line ending
-        content = decoded_string.replace('\r\n', '\n')
-
-        # strip all leading and trailing new line characters
-        content = content.strip('\n')
-
-        # remove trailing whitespace or tab characters
-        content_lines = content.split('\n')
-
-        formatted_lines = []
-        for line in content_lines:
-            line = line.rstrip()
-            line = line.rstrip('\t')
-            formatted_lines.append(line)
-
-        content = '\n'.join(formatted_lines)
-
-        # append empty line at the end
-        # it's good practice for Git
-        content = content + '\n'
-        encoded_content = content.encode(Encoding.UTF8)
-
-        if encoded_content == bs:
-            if verbose:
-                print(f'{TermColor.FG_BRIGHT_GREEN}OK{TermColor.RESET_COLOR}')
-            else:
-                print('\r', end='')
-        else:
+        if format_result['diff']:
             if is_run:
+                content_bs = format_result['content_bs']
                 os.remove(filepath)  # file content may not be changed if we don't remove it
                 with open(filepath, mode='wb') as outfile:
-                    outfile.write(encoded_content)
+                    outfile.write(content_bs)
 
-                print(f'{TermColor.FG_RED}x{TermColor.RESET_COLOR} -> {TermColor.FG_BRIGHT_GREEN}OK{TermColor.RESET_COLOR}')
+                print(f'{RED}x{RESET} -> {GREEN}OK{RESET}', flush=True)
             else:
-                print(f'{TermColor.FG_RED}x{TermColor.RESET_COLOR}')
+                print(f'{RED}x{RESET}', flush=True)
+        else:
+            if verbose:
+                print(f'{GREEN}OK{RESET}', flush=True)
+            else:
+                print('\r', end='')
 
 
 if __name__ == '__main__':
