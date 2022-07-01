@@ -108,6 +108,7 @@ IGNORED_EXTS = [
     # opencore binaries
     '.aml',
     '.bin',
+    '.ico',
 ]
 
 
@@ -284,7 +285,8 @@ def main():
         format_result = format_text_file(filepath)
 
         if 'error' in format_result:
-            print(f'- {RED}error{RESET}', flush=True)
+            error_msg = format_result['error']
+            print(f'- {RED}{error_msg}{RESET}', flush=True)
             continue
 
         if format_result['diff']:

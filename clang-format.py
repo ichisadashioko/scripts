@@ -315,7 +315,8 @@ if __name__ == '__main__':
         format_result = format_with_clang_format(filepath)
 
         if 'error' in format_result:
-            print(f'- {RED}error{RESET}', flush=True)
+            error_msg = format_result['error']
+            print(f'- {RED}{error_msg}{RESET}', flush=True)
             continue
 
         if format_result['diff']:
