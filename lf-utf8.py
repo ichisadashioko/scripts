@@ -109,6 +109,8 @@ IGNORED_EXTS = [
     '.aml',
     '.bin',
     '.ico',
+    '.woff',
+    '.woff2',
 ]
 
 
