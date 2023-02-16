@@ -111,6 +111,9 @@ IGNORED_EXTS = [
     '.ico',
     '.woff',
     '.woff2',
+    '.obj',
+    '.bmp',
+    '.ppm',
 ]
 
 
