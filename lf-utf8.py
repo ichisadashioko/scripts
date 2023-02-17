@@ -6,9 +6,9 @@ import argparse
 import stat
 import typing
 
-RESET = '\033[0m'
-RED = '\033[91m'
-GREEN = '\033[92m'
+RS = '\033[0m'
+R = '\033[91m'
+G = '\033[92m'
 FG_BRIGHT_YELLOW = '\033[93m'
 FG_BRIGHT_BLUE = '\033[94m'
 FG_BRIGHT_MAGENTA = '\033[95m'
@@ -284,14 +284,14 @@ def main():
 
         filesize = os.path.getsize(filepath)
         if (filesize == 0) or (filesize > MAX_FILESIZE):
-            print(f'- {RED}file is too big ({filesize}){RESET}', flush=True)
+            print(f'- {R}file is too big ({filesize}){RS}', flush=True)
             continue
 
         format_result = format_text_file(filepath)
 
         if 'error' in format_result:
             error_msg = format_result['error']
-            print(f'- {RED}{error_msg}{RESET}', flush=True)
+            print(f'- {R}{error_msg}{RS}', flush=True)
             continue
 
         if format_result['diff']:
@@ -301,12 +301,12 @@ def main():
                 with open(filepath, mode='wb') as outfile:
                     outfile.write(content_bs)
 
-                print(f'{RED}x{RESET} -> {GREEN}OK{RESET}', flush=True)
+                print(f'{R}x{RS} -> {G}OK{RS}', flush=True)
             else:
-                print(f'{RED}x{RESET}', flush=True)
+                print(f'{R}x{RS}', flush=True)
         else:
             if verbose:
-                print(f'{GREEN}OK{RESET}', flush=True)
+                print(f'{G}OK{RS}', flush=True)
             else:
                 print('\r', end='')
 
