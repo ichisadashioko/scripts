@@ -14,6 +14,16 @@ FG_BRIGHT_BLUE = '\033[94m'
 FG_BRIGHT_MAGENTA = '\033[95m'
 
 
+def check_for_utf8_bom(bs: bytes):
+    if len(bs) < 3:
+        return False
+
+    if (bs[0] == 0xEF) and (bs[1] == 0xBB) and (bs[2] == 0xBF):
+        return True
+
+    return False
+
+
 class Encoding:
     UTF8 = 'utf-8'
     UTF8_WITH_BOM = 'utf-8-sig'
@@ -23,13 +33,14 @@ class Encoding:
 
     @classmethod
     def decode(cls, bs: bytes):
-        try:
-            encoding = cls.UTF8_WITH_BOM
-            decoded_content = bs.decode(encoding)
-            return encoding, decoded_content
-        except Exception as ex:
-            # traceback.print_exc()
-            pass
+        if check_for_utf8_bom(bs):
+            try:
+                encoding = cls.UTF8_WITH_BOM
+                decoded_content = bs.decode(encoding)
+                return encoding, decoded_content
+            except Exception as ex:
+                # traceback.print_exc()
+                pass
 
         try:
             encoding = cls.UTF8
@@ -114,6 +125,10 @@ IGNORED_EXTS = [
     '.obj',
     '.bmp',
     '.ppm',
+    #
+    '.raw',
+    '.pdf',
+    '.chm',  # zlib class library documentation
 ]
 
 
@@ -231,6 +246,7 @@ def format_text_file(inpath: str):
         }
     else:
         return {
+            'encoding': encoding,
             'diff': True,
             'content_bs': encoded_content,
         }
@@ -272,7 +288,7 @@ def main():
 
     MAX_FILESIZE = 1024 * 1024 * 10  # 10 MBs
     for filepath in filepath_list:
-        print('>', filepath, end=' ')
+        print('>', filepath, end='')
 
         basename = os.path.basename(filepath)
         ext = os.path.splitext(basename)[1]
@@ -284,14 +300,15 @@ def main():
 
         filesize = os.path.getsize(filepath)
         if (filesize == 0) or (filesize > MAX_FILESIZE):
-            print(f'- {R}file is too big ({filesize}){RS}', flush=True)
+            print(f' - {R}file is too big ({filesize}){RS}', flush=True)
             continue
 
         format_result = format_text_file(filepath)
+        decoded_encoding = format_result.get('encoding', None)
 
         if 'error' in format_result:
             error_msg = format_result['error']
-            print(f'- {R}{error_msg}{RS}', flush=True)
+            print(f' - {R}{error_msg}{RS}', flush=True)
             continue
 
         if format_result['diff']:
@@ -301,12 +318,12 @@ def main():
                 with open(filepath, mode='wb') as outfile:
                     outfile.write(content_bs)
 
-                print(f'{R}x{RS} -> {G}OK{RS}', flush=True)
+                print(f' {G}{decoded_encoding}{RS} {R}x{RS} -> {G}OK{RS}', flush=True)
             else:
-                print(f'{R}x{RS}', flush=True)
+                print(f' {G}{decoded_encoding}{RS} {R}x{RS}', flush=True)
         else:
             if verbose:
-                print(f'{G}OK{RS}', flush=True)
+                print(f' {G}{decoded_encoding}{RS} {G}OK{RS}', flush=True)
             else:
                 print('\r', end='')
 
