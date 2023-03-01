@@ -129,6 +129,7 @@ IGNORED_EXTS = [
     '.raw',
     '.pdf',
     '.chm',  # zlib class library documentation
+    '.pk',  # zlib blast
 ]
 
 
