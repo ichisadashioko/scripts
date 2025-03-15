@@ -89,6 +89,10 @@ IGNORED_DIRS = [
     'release',
     '.ipynb_checkpoints',
     '__pycache__',
+    'textmesh pro',
+    'library',
+    'temp',
+    'usersettings',
 ]
 
 IGNORED_EXTS = [
@@ -130,6 +134,22 @@ IGNORED_EXTS = [
     '.pdf',
     '.chm',  # zlib class library documentation
     '.pk',  # zlib blast
+    # unity
+    '.asset',
+    '.meta',
+    '.ttf',
+    '.shadergraph',
+    '.shader',
+    '.psd',
+    '.cginc',
+    '.unity',
+    '.mat',
+    '.prefab',
+    '.sln',
+    '.zip',
+    '.csproj',
+    '.inputactions',
+    '.scenetemplate',
 ]
 
 
